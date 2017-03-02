@@ -1,69 +1,75 @@
-clc
-clear all
-close all
+clc;
+clear all;
+close all;
 
 %Reading file and initial values
 bias = 1;
 learningRate = 0.5;
-seasons = 10;
+seasons = 30;
 data = load('iris.txt');
-biasArray(1:150,1) = bias;
+biasArray(1:size(data),1) = bias;
 
-%Randomize and separate test from train
-data = data(randperm(size(data,1)),:);
-trainSize = 120;%round(size(data,1)/10*2);
-trainArray = data(1:trainSize,:);
-testArray = data(trainSize+1:size(data,1),:);
-
-[lines,collumns] = size(trainArray);
-%Separating result from info
-typesTrain = trainArray(:,collumns-2:collumns);
-typesTest = testArray(:,collumns-2:collumns);
-
-infoTrain = [biasArray(1:120,:) trainArray(:,1:collumns-3)];
-infoTest = [biasArray(121:150,:) testArray(:,1:collumns-3)];
-
-%Choosing weights
-[lines,collumns] = size(infoTrain);
-weights(1:collumns,1:3) = 0;
-%weights = rand(5,3);
-
-%Perceptron Train
-arrayAcertos = [];
-for i = 1:10
-    for j = 1:120
-        result = infoTrain(j,:)*weights;
-        for index = 1:size(weights,2)
-            if result(1,index) >= 0
-                result(1,index) = 1;
-            else
-                result(1,index) = 0;
+for execucoes = 1:10
+    %Randomize and separate test from train
+    data = data(randperm(size(data,1)),:);
+    trainSize = round(size(data,1)/10*8);
+    trainArray = data(1:trainSize,:);
+    testArray = data(trainSize+1:size(data,1),:);
+    
+    %Separating result from info
+    [lines,collumns] = size(data);
+    typesTrain = trainArray(:,collumns-2:collumns);
+    typesTest = testArray(:,collumns-2:collumns);
+    
+    infoTrain = [biasArray(1:trainSize,:) trainArray(:,1:collumns-3)];
+    infoTest = [biasArray(trainSize+1:lines,:) testArray(:,1:collumns-3)];
+    
+    %Choosing weights
+    [lines,collumns] = size(infoTrain);
+    weights(1:collumns,1:3) = 0;
+    %weights = rand(5,3);
+    
+    %Perceptron Train
+    for i = 1:seasons
+        for j = 1:lines
+            resultTrain = infoTrain(j,:)*weights;
+            logsig(resultTrain);
+            [valueMax,indexMax] = max(resultTrain);
+            for k = 1:size(resultTrain,2)
+                if k == indexMax
+                    resultTrain(k) = 1;
+                else
+                    resultTrain(1,k) = 0;
+                end
             end
+            
+            error = typesTrain(j,:)-resultTrain;
+            weights = weights+learningRate*infoTrain(j,:)'*error;
         end
-        
-        error = typesTrain(j,:)-result;
-        weights = weights+learningRate*infoTrain(j,:)'*error;
     end
     
-%Perceptron Test
-
+    %Perceptron Test
     acertos = 0;
-    for j = 1:30
-        result = infoTest(j,:)*weights;
-        for index = 1:size(weights,2)
-            if result(1,index) >= 0
-                result(1,index) = 1;
+    
+    for i = 1:size(typesTest)
+        resultTest = infoTest(i,:)*weights;
+        logsig(resultTest);
+        [valueMax,indexMax] = max(resultTest);
+        for k = 1:size(resultTest,2)
+            if k == indexMax
+                resultTest(k) = 1;
             else
-                result(1,index) = 0;
+                resultTest(1,k) = 0;
             end
         end
-        error = typesTest(j,:)-result;
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%
+        error = typesTest(i,:)-resultTest;
         tf = isequal(error,[0,0,0]);
         if tf
             acertos = acertos+1;
         end
     end
-    arrayAcertos(end+1) = acertos;
+    totalAcertos(execucoes) = acertos;
 end
-bar(arrayAcertos)
-axis ([0 12 0 30])
+bar(totalAcertos)
+axis ([0 11 0 30])
